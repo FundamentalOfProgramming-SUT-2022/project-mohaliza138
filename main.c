@@ -13,6 +13,38 @@ char startingPosition[4096];
 char result[1024];
 //for strings without * at the end:
 char nextSubstring[1024];
+char printingResult[1000000];
+
+
+void errorHandler(int err, int printSuccess)
+{
+    switch (err)
+    {
+        case 0:
+            if(printSuccess)
+                strcat(printingResult, "Success!\n");
+            break;
+        case -1:
+            break;
+        case -2:
+            strcat(printingResult, "Invalid file or directory!\n");
+            break;
+        case -3:
+            strcat(printingResult, "Out fo bounds!\n");
+            break;
+        case -4:
+            strcat(printingResult, "There already exists a file with the name given!\n");
+            break;
+        case -5:
+            strcat(printingResult, "Can't use the following characters: \", \', <, >, \?, *, :, |, \\\n");
+            break;
+        case -6:
+            strcat(printingResult, "No previous backup!\n");
+            break;
+        default:
+            break;
+    }
+}
 
 
 int countAndDelete(char *sText)
@@ -265,18 +297,20 @@ int extractString()
 }
 
 
-int createFile(char *path)
+int createFile(char *path1)
 {
+    char path[1024];
+    strcpy(path, path1);
     if(wizard("/root/", path))
     {
-        return -1;
+        return -2;
     }
     int size = (int )strlen(path);
     for (int i = 0; i < size; ++i)
     {
         if(path[i] == '"' || path[i] == '<' || path[i] == '?' || path[i] == '*' || path[i] == ':' || path[i] == '|' || path[i] == '\\' || path[i] == '>')
         {
-            return -2;
+            return -5;
         }
     }
     char part[1024];
@@ -307,7 +341,7 @@ int createFile(char *path)
             {
                 fclose(fp);
                 backToStartingPoint();
-                return -3;
+                return -4;
             }
         }
         else
@@ -344,13 +378,14 @@ int numExtract()
 }
 
 
-int cat(char *path)
+int cat(char *path1)
 {
+    char path[1024];
+    strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -361,9 +396,8 @@ int cat(char *path)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -375,19 +409,19 @@ int cat(char *path)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
                 int n = (int)strlen(part);
                 for (int j = n + 4; j < 50; ++j)
                 {
-                    printf("-");
+                    strcat(printingResult, "-");
                 }
-                printf(" %s --", part);
-                printf("\n");
+                char temp[1024];
+                sprintf(temp, " %s --\n", part);
+                strcat(printingResult, temp);
                 while (1)
                 {
                     char lines[1024];
@@ -395,9 +429,11 @@ int cat(char *path)
                     fgets(lines, 1024, fp);
                     if(lines[0] == '\0')
                         break;
-                    printf("%s", lines);
+                    char temp[1024];
+                    sprintf(temp, "%s", lines);
+                    strcat(printingResult, temp);
                 }
-                printf("\n--------------------------------------------------\n");//50-
+                strcat(printingResult, "\n--------------------------------------------------\n");//50-
                 fclose(fp);
                 backToStartingPoint();
                 return 0;
@@ -418,8 +454,7 @@ int catLine(char *path1, int line)
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -430,9 +465,8 @@ int catLine(char *path1, int line)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -444,9 +478,8 @@ int catLine(char *path1, int line)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -454,9 +487,11 @@ int catLine(char *path1, int line)
                 for (int j = 0; j < line; ++j) {
                     fgets(sth, 1024, fp);
                 }
-                printf("%s", sth);
+                char temp[1024];
+                sprintf(temp, "%s", sth);
+                strcat(printingResult, temp);
                 if(sth[strlen(sth) - 1] != '\n')
-                    printf("\n");
+                    strcat(printingResult, "\n");
                 fclose(fp);
                 backToStartingPoint();
                 return 0;
@@ -477,8 +512,7 @@ int copyForward(char *path1, int line, int charIndex, int length)
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++) {
@@ -488,9 +522,8 @@ int copyForward(char *path1, int line, int charIndex, int length)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -502,9 +535,8 @@ int copyForward(char *path1, int line, int charIndex, int length)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -515,11 +547,10 @@ int copyForward(char *path1, int line, int charIndex, int length)
                     fgets(lines, 1024, fp);
                     if(lines[0] == '\0')
                     {
-                        printf("Out of bounds!\n");
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return 1;
+                        return -3;
                     }
                 }
                 fgets(input, 1024, fp);
@@ -529,11 +560,10 @@ int copyForward(char *path1, int line, int charIndex, int length)
                     c = input[0];
                     if(c == '\n' || c == '\0')
                     {
-                        printf("Out of bounds!\n");
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return 1;
+                        return -3;
                     }
                     char tmp[2];
                     tmp[0] = c;
@@ -543,17 +573,15 @@ int copyForward(char *path1, int line, int charIndex, int length)
                 memset(clipBoard, 0, 1000000);
                 for (int j = 0; j < length; ++j)
                 {
-//                    printf("<%c>", input[0]);
                     if(input[0] == '\0')
                     {
                         fgets(input, 1024, fp);
                         if(input[0] == '\0')
                         {
-                            printf("Out of bounds!\n");
                             fclose(fp);
                             remove("temp.txt");
                             backToStartingPoint();
-                            return 1;
+                            return -3;
                         }
                     }
                     char tmp[2];
@@ -566,7 +594,6 @@ int copyForward(char *path1, int line, int charIndex, int length)
                 input[0] = '\0';
                 fclose(fp);
                 backToStartingPoint();
-                printf("Success!\n");
                 return 0;
             }
         }
@@ -578,15 +605,14 @@ int copyForward(char *path1, int line, int charIndex, int length)
 }
 
 
-int copyBackward(char *path, int line, int charIndex, int length)
+int copyBackward(char *path1, int line, int charIndex, int length)
 {
-    char pathCopy[1024];
-    strcpy(pathCopy, path);
+    char path[1024];
+    strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -597,9 +623,8 @@ int copyBackward(char *path, int line, int charIndex, int length)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -611,9 +636,8 @@ int copyBackward(char *path, int line, int charIndex, int length)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -625,10 +649,9 @@ int copyBackward(char *path, int line, int charIndex, int length)
                     fgets(lines, 1024, fp);
                     if(lines[0] == '\0')
                     {
-                        printf("Out of bounds!\n");
                         fclose(fp);
                         backToStartingPoint();
-                        return 1;
+                        return -3;
                     }
                     sizes[j] = (int) strlen(lines);
                 }
@@ -640,15 +663,14 @@ int copyBackward(char *path, int line, int charIndex, int length)
                 {
                     if(sizes[j] >= templen)
                     {
-                        return copyForward(pathCopy, j, sizes[j] - templen, length);
+                        return copyForward(path1, j, sizes[j] - templen, length);
                     }
                     else
                     {
                         templen -= sizes[j];
                     }
                 }
-                printf("Out of bounds!\n");
-                return 1;
+                return -3;
             }
         }
         else
@@ -659,15 +681,14 @@ int copyBackward(char *path, int line, int charIndex, int length)
 }
 
 
-void insertStr(char *path1, char *content, int line, int charIndex)
+int insertStr(char *path1, char *content, int line, int charIndex)
 {
     char path[1024];
     strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++) {
@@ -677,9 +698,8 @@ void insertStr(char *path1, char *content, int line, int charIndex)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -691,9 +711,8 @@ void insertStr(char *path1, char *content, int line, int charIndex)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return;
+                return -2;
             }
             else
             {
@@ -705,12 +724,11 @@ void insertStr(char *path1, char *content, int line, int charIndex)
                     fgets(lines, 1024, fp);
                     if(lines[0] == '\0')
                     {
-                        printf("Out of bounds!\n");
                         fclose(newOne);
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return;
+                        return -3;
                     }
                     fputs(lines, newOne);
                 }
@@ -721,12 +739,11 @@ void insertStr(char *path1, char *content, int line, int charIndex)
                     c = input[0];
                     if(c == '\n' || c == '\0')
                     {
-                        printf("Out of bounds!\n");
                         fclose(newOne);
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return;
+                        return -3;
                     }
                     fputc(c, newOne);
                     char tmp[2];
@@ -750,8 +767,7 @@ void insertStr(char *path1, char *content, int line, int charIndex)
                 remove(part);
                 rename("temp.txt", part);
                 backToStartingPoint();
-                printf("Success!\n");
-                return;
+                return 0;
             }
         }
         else
@@ -759,16 +775,6 @@ void insertStr(char *path1, char *content, int line, int charIndex)
             part[i] = currentChar;
         }
     }
-//    FILE *newFile = fopen("tempFile.txt", "w");
-//    char c;
-//    int zIndex = 0;
-//    for (int i = 1; i < line; zIndex++)
-//    {
-//
-//        fscanf(path, "%c", &c);
-//    }
-//    remove(path);
-//    rename("tempFile.txt", path);
 }
 
 
@@ -779,7 +785,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
     char part[1024];
     if(wizard("/root/", path))
     {
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++) {
@@ -790,7 +796,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
             if(0 - _chdir(part))
             {
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -803,7 +809,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
             if(fp == NULL)
             {
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -819,7 +825,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return 2;
+                        return -3;
                     }
                     fputs(lines, newOne);
                 }
@@ -834,7 +840,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
                         fclose(fp);
                         remove("temp.txt");
                         backToStartingPoint();
-                        return 2;
+                        return -3;
                     }
                     fputc(c, newOne);
                     char tmp[2];
@@ -844,7 +850,6 @@ int removeForward(char *path1, int line, int charIndex, int length)
                 }
                 for (int j = 0; j < length; ++j)
                 {
-//                    printf("<%c>", input[0]);
                     if(input[0] == '\0')
                     {
                         fgets(input, 1024, fp);
@@ -854,7 +859,7 @@ int removeForward(char *path1, int line, int charIndex, int length)
                             fclose(fp);
                             remove("temp.txt");
                             backToStartingPoint();
-                            return 2;
+                            return -3;
                         }
                     }
                     char tmp[2];
@@ -889,14 +894,14 @@ int removeForward(char *path1, int line, int charIndex, int length)
 }
 
 
-int removeBackward(char *path, int line, int charIndex, int length)
+int removeBackward(char *path1, int line, int charIndex, int length)
 {
-    char pathCopy[1024];
-    strcpy(pathCopy, path);
+    char path[1024];
+    strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -908,7 +913,7 @@ int removeBackward(char *path, int line, int charIndex, int length)
             if(0 - _chdir(part))
             {
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -921,12 +926,12 @@ int removeBackward(char *path, int line, int charIndex, int length)
             if(fp == NULL)
             {
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
                 int sizes[line + 1];
-                for (int j = 1; j < line; ++j)
+                for (int j = 1; j <= line; ++j)
                 {
                     char lines[1024];
                     lines[0] = '\0';
@@ -935,9 +940,15 @@ int removeBackward(char *path, int line, int charIndex, int length)
                     {
                         fclose(fp);
                         backToStartingPoint();
-                        return 2;
+                        return -3;
                     }
                     sizes[j] = (int) strlen(lines);
+                }
+                if(sizes[line] < charIndex)
+                {
+                    fclose(fp);
+                    backToStartingPoint();
+                    return -3;
                 }
                 sizes[line] = charIndex;
                 fclose(fp);
@@ -947,14 +958,14 @@ int removeBackward(char *path, int line, int charIndex, int length)
                 {
                     if(sizes[j] >= templen)
                     {
-                        return removeForward(pathCopy, j, sizes[j] - templen, length);
+                        return removeForward(path1, j, sizes[j] - templen, length);
                     }
                     else
                     {
                         templen -= sizes[j];
                     }
                 }
-                return 2;
+                return -3;
             }
         }
         else
@@ -969,27 +980,17 @@ int superWizard(char *first, char *second2)
 {
     char second[1024];
     strcpy(second, second2);
-//    if((int)strlen(second) > 0 && (second[(int)strlen(second) - 1] == ' ' || second[(int)strlen(second) - 1] == '\n'))
-//        for (int i = (int)strlen(second) - 1; i >= 0; --i)
-//        {
-//            if(second[i] == ' ' || second[i] == '\n')
-//                second[i] = '\0';
-//            else
-//                break;
-//        }
 
     if (!strlen(first))
     {
-//        printf("counter: %d, ind: %d\n", counter, indexToReach);
         strcpy(nextSubstring, second);
         return ++counter == indexToReach;
     }
 
-    if (strlen(first) == 0 && (second[0] == '\0' || second[0] == '\n' || second[0] == ' '))
-    {
-//        printf("counter: %d, ind: %d\n", counter, indexToReach);
-        return ++counter == indexToReach;
-    }
+//    if (strlen(first) == 0 && (second[0] == '\0' || second[0] == '\n' || second[0] == ' '))
+//    {
+//        return ++counter == indexToReach;
+//    }
 
 
     if (strlen(first) > 1 && first[0] == '*') {
@@ -1022,7 +1023,7 @@ int superWizard(char *first, char *second2)
     {
         char firstSub[1024];
         strcpy(firstSub, substring(1, first));
-        if(second[0] == ' ' || second[0] == '\0')
+        if(second[0] == ' ' || second[0] == '\0' || strlen(first) == 1)
             return superWizard(firstSub, second);
         char secondSub[1024];
         strcpy(secondSub, substring(1, second));
@@ -1049,12 +1050,10 @@ int findAt(int indexToFind, char *first, char *path1)
     indexToReach = indexToFind;
     counter = 0;
     int index = 0;
-    int flag = 1;
     char second[1024];
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
         return -2;
     }
     int z = 0;
@@ -1065,7 +1064,6 @@ int findAt(int indexToFind, char *first, char *path1)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
                 return -2;
             }
@@ -1079,7 +1077,6 @@ int findAt(int indexToFind, char *first, char *path1)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
                 return -2;
             }
@@ -1092,7 +1089,6 @@ int findAt(int indexToFind, char *first, char *path1)
                 {
                     if (superWizard(first, second)) {
                         finalResult = index;
-                        flag = 0;
                         break;
                     }
                     if(flag)
@@ -1131,8 +1127,7 @@ int findAtByWord(int indexToFind, char *first, char *path1)
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++) {
@@ -1142,9 +1137,8 @@ int findAtByWord(int indexToFind, char *first, char *path1)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -1156,9 +1150,8 @@ int findAtByWord(int indexToFind, char *first, char *path1)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -1196,13 +1189,8 @@ int findAtByWord(int indexToFind, char *first, char *path1)
 int replace(char *from, char *to, int index, char *path)
 {
     int b = findAt(index, from, path);
-    if(b == -2)
-        return -2;
-    if(b == -1)
-    {
-        printf("Out of bounds!\n");
-        return 1;
-    }
+    if(b < 0)
+        return b;
     if(from[strlen(from) - 1] == '*')
     {
         int start = b;
@@ -1225,7 +1213,7 @@ int replace(char *from, char *to, int index, char *path)
         int length = finalIndex - start;
         positionFinder(start, path);
         removeForward(path, calculatedLine, calculatedIndex, length);
-        insertStr(path, to, calculatedLine, calculatedIndex);
+        return insertStr(path, to, calculatedLine, calculatedIndex);
     }
     else
     {
@@ -1241,7 +1229,7 @@ int replace(char *from, char *to, int index, char *path)
         int length = finalIndex - start;
         positionFinder(start, path);
         removeForward(path, calculatedLine, calculatedIndex, length);
-        insertStr(path, to, calculatedLine, calculatedIndex);
+        return insertStr(path, to, calculatedLine, calculatedIndex);
     }
 }
 
@@ -1268,20 +1256,30 @@ int tree(int depth, int bitmask, int limit)
         entry = readdir(directory);
         for (int j = 1; j < depth; ++j) {
             if(1 & (bitmask >> (j - 1)))
-                printf("%c", (char)179);
+            {
+                char temp[1024];
+                sprintf(temp, "%c", (char)179);
+                strcat(printingResult, temp);
+            }
             else
-                printf(" ");
+                strcat(printingResult, " ");
         }
         if(i == count - 1)
         {
             bitmask &= ~(1 << (depth - 1));
-            printf("%c", (char)192);
+            char temp[1024];
+            sprintf(temp, "%c", (char)192);
+            strcat(printingResult, temp);
         }
         else
         {
-            printf("%c", (char)195);
+            char temp[1024];
+            sprintf(temp, "%c", (char)195);
+            strcat(printingResult, temp);
         }
-        printf("%s\n", entry->d_name);
+        char temp[1024];
+        sprintf(temp, "%s\n", entry->d_name);
+        strcat(printingResult, temp);
         char currentPath1[1024];
         getcwd(currentPath1, 1024);
         if(!(0 - chdir(entry->d_name)))
@@ -1295,13 +1293,15 @@ int tree(int depth, int bitmask, int limit)
 }
 
 
-int compare(char *path, char *path2)
+int compare(char *path1, char *path22)
 {
+    char path2[1024], path[1024];
+    strcpy(path2, path22);
+    strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -1312,9 +1312,8 @@ int compare(char *path, char *path2)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -1322,18 +1321,14 @@ int compare(char *path, char *path2)
         }
         else if(currentChar == '\0')
         {
-            
-            
-            
             part[i] = '\0';
             FILE *fp = fopen(part, "r");
             char file1Name[1024];
             strcpy(file1Name, part);
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -1341,8 +1336,8 @@ int compare(char *path, char *path2)
                 char part[1024];
                 if(wizard("/root/", path2))
                 {
-                    printf("Invalid path!\n");
-                    return 1;
+                    fclose(fp);
+                    return -2;
                 }
                 z = 0;
                 for (int i = 0; ; ++i, z++)
@@ -1353,9 +1348,9 @@ int compare(char *path, char *path2)
                         part[i] = '\0';
                         if(0 - _chdir(part))
                         {
-                            printf("Invalid file or directory!\n");
                             backToStartingPoint();
-                            return 1;
+                            fclose(fp);
+                            return -2;
                         }
                         strcat(currentPath, "\\");
                         strcat(currentPath, part);
@@ -1367,9 +1362,9 @@ int compare(char *path, char *path2)
                         FILE *fp2 = fopen(part, "r");
                         if(fp2 == NULL)
                         {
-                            printf("Invalid file or directory!\n");
                             backToStartingPoint();
-                            return 1;
+                            fclose(fp);
+                            return -2;
                         }
                         else
                         {
@@ -1383,11 +1378,21 @@ int compare(char *path, char *path2)
                                     break;
                                 if(flag && ((line2[0] == '\0') ^ (line1[0] == '\0')))
                                 {
-                                    printf(">>>>>>>>>>>> #%d >>>>>>>>>>>>\n", j);
+                                    char temp[1024];
+                                    sprintf(temp, ">>>>>>>>>>>> #%d >>>>>>>>>>>>\n", j);
+                                    strcat(printingResult, temp);
                                     if(line1[0] == '\0')
-                                        printf("%s:\n", part);
+                                    {
+                                        char temp[1024];
+                                        sprintf(temp, "%s:\n", part);
+                                        strcat(printingResult, temp);
+                                    }
                                     else
-                                        printf("%s:\n", file1Name);
+                                    {
+                                        char temp[1024];
+                                        sprintf(temp, "%s:\n", file1Name);
+                                        strcat(printingResult, temp);
+                                    }
                                     flag = 0;
                                 }
                                 if((line2[0] == '\0') ^ (line1[0] == '\0'))
@@ -1396,7 +1401,10 @@ int compare(char *path, char *path2)
                                         line1[strlen(line1) - 1] = '\0';
                                     if(line2[strlen(line2) - 1] == '\n')
                                         line2[strlen(line2) - 1] = '\0';
-                                    printf("%s%s\n", line1, line2);
+
+                                    char temp[1024];
+                                    sprintf(temp, "%s%s\n", line1, line2);
+                                    strcat(printingResult, temp);
                                     continue;
                                 }
                                 else if(strcmp(line1, line2) != 0) {
@@ -1404,7 +1412,10 @@ int compare(char *path, char *path2)
                                         line1[strlen(line1) - 1] = '\0';
                                     if(line2[strlen(line2) - 1] == '\n')
                                         line2[strlen(line2) - 1] = '\0';
-                                    printf("============ #%d ============\n%s\n----------------------------\n%s\n", j, line1, line2);
+
+                                    char temp[1024];
+                                    sprintf(temp, "============ #%d ============\n%s\n----------------------------\n%s\n", j, line1, line2);
+                                    strcat(printingResult, temp);
                                 }
                             }
                             backToStartingPoint();
@@ -1418,13 +1429,6 @@ int compare(char *path, char *path2)
                         part[i] = currentChar;
                     }
                 }
-
-
-
-
-
-                fclose(fp);
-                return 0;
             }
         }
         else
@@ -1435,13 +1439,14 @@ int compare(char *path, char *path2)
 }
 
 
-int autoIndent(char *path)
+int autoIndent(char *path1)
 {
+    char path[1024];
+    strcpy(path, path1);
     char part[1024];
     if(wizard("/root/", path))
     {
-        printf("Invalid path!\n");
-        return 1;
+        return -2;
     }
     int z = 0;
     for (int i = 0; ; ++i, z++)
@@ -1452,9 +1457,8 @@ int autoIndent(char *path)
             part[i] = '\0';
             if(0 - _chdir(part))
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             strcat(currentPath, "\\");
             strcat(currentPath, part);
@@ -1466,9 +1470,8 @@ int autoIndent(char *path)
             FILE *fp = fopen(part, "r");
             if(fp == NULL)
             {
-                printf("Invalid file or directory!\n");
                 backToStartingPoint();
-                return 1;
+                return -2;
             }
             else
             {
@@ -1555,7 +1558,6 @@ int autoIndent(char *path)
                 remove(part);
                 rename("temp.txt", part);
                 backToStartingPoint();
-                printf("Success!\n");
                 return 0;
             }
         }
@@ -1573,12 +1575,41 @@ int history(char *path)
     strcpy(path1, path);
     if(wizard("/root/", path1))
     {
-        return 1;
+        return -2;
     }
     FILE *fp = fopen(path1, "r");
     if(fp == NULL)
-        return 2;
+        return -2;
     _chdir("C:\\parallel_root");
+    strcpy(path1, path);
+    strcat(path1, ".temp");
+    createFile(path1);
+    strcpy(path1, path);
+    wizard("/root/", path1);
+    _chdir("C:\\parallel_root");
+    strcat(path1, ".temp");
+    FILE *fp1 = fopen(path1, "w");
+    char c;
+    while ((c = fgetc(fp)) != EOF)
+        fputc(c, fp1);
+    fclose(fp);
+    fclose(fp1);
+
+    _chdir("C:\\root");
+    return 0;
+}
+
+
+int submitHistory(char *path)
+{
+    char path1[1024];
+    strcpy(path1, path);
+    _chdir("C:\\parallel_root");
+    strcat(path1, ".temp");
+    wizard("/root/", path1);
+    FILE *fp = fopen(path1, "r");
+    if(fp == NULL)
+        return -2;
     strcpy(path1, path);
     createFile(path1);
     strcpy(path1, path);
@@ -1602,7 +1633,7 @@ int undo(char *path)
     strcpy(path1, path);
     if(wizard("/root/", path1))
     {
-        return -1;
+        return -2;
     }
     FILE *fp = fopen(path1, "r");
     if(fp == NULL)
@@ -1630,7 +1661,7 @@ int undo(char *path)
     if(fp1 == NULL)
     {
         //no previous backup
-        return -3;
+        return -6;
     }
     temp = fopen("temp.temp", "r");
 
@@ -1651,6 +1682,429 @@ int undo(char *path)
 }
 
 
+void Arman()
+{
+    char stringGiven[1024];
+    strcpy(stringGiven, printingResult);
+    printingResult[0] = '\0';
+    if(!wizard("insertstr --file ", input))
+    {
+        extractString();
+        if(wizard(" --pos ", input))
+        {
+            printf("Invalid input!\n");
+            return;
+        }
+        int lineNo = numExtract();
+        if(wizard(":", input))
+        {
+            printf("Invalid input!\n");
+            return;
+        }
+        int charNo = numExtract();
+        if(wizard("\n", input))
+        {
+            printf("Invalid input!\n");
+            return;
+        }
+        int a = insertStr(text, stringGiven, lineNo, charNo);
+        errorHandler(a, 1);
+        printf("%s", printingResult);
+    }
+
+    else if(!wizard("find --file ", input))
+    {
+        extractString();
+        if(!wizard("\n", input))
+        {
+            int a = findAt(1, stringGiven, text);
+            if(a >= -1)
+            {
+                char temp[1024];
+                sprintf(temp, "%d\n", a);
+                strcat(printingResult, temp);
+            }
+            errorHandler(a, 0);
+        }
+        else if(!wizard(" --count\n", input))
+        {
+            for (int i = 0; ; ++i) {
+                int a = findAt(i + 1, stringGiven, text);
+                if(a == -1)
+                {
+                    char temp[1024];
+                    sprintf(temp, "%d\n", i);
+                    strcat(printingResult, temp);
+                    break;
+                }
+                if(a < -1)
+                {
+                    errorHandler(a, 0);
+                    break;
+                }
+            }
+        }
+        else if(!wizard(" --at ", input))
+        {
+            int index = numExtract();
+            if(wizard("\n", input))
+            {
+                strcat(printingResult, "Invalid input!\n");
+                return;
+            }
+            int a;
+            a = findAt(index, stringGiven, text);
+            if(a >= -1)
+            {
+                char temp[1024];
+                sprintf(temp, "%d\n", a);
+                strcat(printingResult, temp);
+            }
+            errorHandler(a, 0);
+        }
+        else if(!wizard(" --byword\n", input))
+        {
+            int a;
+            a = findAtByWord(1, stringGiven, text);
+            errorHandler(a, 0);
+            if(a >= -1)
+            {
+                char temp[1024];
+                sprintf(temp, "%d\n", a);
+                strcat(printingResult, temp);
+            }
+        }
+        else if(!wizard(" --byword --at ", input))
+        {
+            int index = numExtract();
+            if(wizard("\n", input))
+            {
+                strcat(printingResult, "Invalid input!\n");
+            }
+            int a = findAtByWord(index, stringGiven, text);
+            errorHandler(a, 0);
+            if(a >= -1)
+            {
+                char temp[1024];
+                sprintf(temp, "%d\n", a);
+                strcat(printingResult, temp);
+            }
+        }
+        else if(!wizard(" --all --byword\n", input))
+        {
+            int newlineFlag;
+            for (int i = 1; ; ++i)
+            {
+                int res = findAtByWord(i, stringGiven, text);
+                errorHandler(res, 0);
+                newlineFlag = res >= -1;
+                if(-1 < res)
+                {
+                    if(i != 1)
+                        strcat(printingResult, ", ");
+                    char temp[1024];
+                    sprintf(temp, "%d\n", res);
+                    strcat(printingResult, temp);
+                    res = findAtByWord(i, stringGiven, text);
+                }
+                else
+                    break;
+            }
+            if(newlineFlag)
+                strcat(printingResult, "\n");
+        }
+        else if(!wizard(" --all\n", input))
+        {
+            int newlineFlag;
+            for (int i = 1; ; ++i)
+            {
+                int res = findAt(i, stringGiven, text);
+                errorHandler(res, 0);
+                newlineFlag = res >= -1;
+                if(-1 < res)
+                {
+                    if(i != 1)
+                        strcat(printingResult, ", ");
+                    char temp[1024];
+                    sprintf(temp, "%d\n", res);
+                    strcat(printingResult, temp);
+                    res = findAt(i, stringGiven, text);
+                }
+                else
+                    break;
+            }
+            if(newlineFlag)
+                strcat(printingResult, "\n");
+        }
+        else
+            strcat(printingResult, "Invalid input!\n");
+        printf("%s", printingResult);
+    }
+
+    else if(!wizard("replace ", input))
+    {
+        char str1[1024], str2[1024];
+        if(!wizard("--str1 ", input))
+        {
+            strcpy(str2, stringGiven);
+            extractString();
+            strcpy(str1, text);
+        }
+        else if(!wizard("--str2 ", input))
+        {
+            strcpy(str1, stringGiven);
+            extractString();
+            strcpy(str2, text);
+        }
+        else
+        {
+            strcat(printingResult, "Invalid input!\n");
+            printf("%s", printingResult);
+            return;
+        }
+        if(wizard(" --file ", input))
+        {
+            printf("Invalid input!\n");
+            return;
+        }
+        extractString();
+
+        if(!wizard("\n", input))
+        {
+            history(text);
+            int a;
+            if((a = replace(str1, str2, 1, text)) == 0)
+                submitHistory(text);
+            errorHandler(a, 1);
+            printf("%s", printingResult);
+        }
+        else if(!wizard(" --at ", input))
+        {
+            int index = numExtract();
+            if(!wizard("\n", input))
+            {
+                history(text);
+                int a;
+                if((a = replace(str1, str2, index, text)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
+            }
+            else
+            {
+                printf("Invalid input!\n");
+                return;
+            }
+        }
+        else if(!wizard(" --all", input)) {
+            if (!wizard("\n", input)) {
+                history(text);
+                int count = 0;
+                for (;; ++count) {
+                    int a = findAt(count + 1, str1, text);
+                    if (a == -1) {
+                        break;
+                    }
+                    if (a < -1) {
+                        errorHandler(a, 1);
+                        printf("%s", printingResult);
+                        return;
+                    }
+                }
+                int range = findAt(count, str1, text) + 1;
+                for (count; count > 0; count--) {
+                    int a = findAt(count, str1, text);
+                    if (a >= range || a == -1)
+                        continue;
+                    replace(str1, str2, count, text);
+                }
+                submitHistory(text);
+                printf("Success!\n");
+            } else {
+                printf("Invalid input!\n");
+                return;
+            }
+        }
+    }
+
+    else if(!wizard("grep ", input))
+    {
+        if(!wizard("--c --str ", input))
+        {
+            extractString();
+            char searchingSTR[1024];
+            strcpy(searchingSTR, text);
+            if(!wizard(" --file ", input))
+            {
+                extractString();
+                if(wizard("\n", input))
+                {
+                    printf( "Invalid input!\n");
+                    return;
+                }
+                for (int i = 0; ; ++i) {
+                    if(findAt(i + 1, searchingSTR, text) == -1)
+                    {
+                        printf("%d\n", i);
+                        break;
+                    }
+                }
+            }
+            else if(!wizard(" --files ", input))
+            {
+                int result = 0;
+                while (1) {
+                    extractString();
+                    for (int i = 0;; ++i) {
+                        int a;
+                        if ((a = findAt(i + 1, searchingSTR, text)) == -1) {
+                            result += i;
+                            break;
+                        }
+                        else if (a <= -2)
+                        {
+                            errorHandler(a, 0);
+                            printf("%s", printingResult);
+                            return;
+                        }
+                    }
+                    if(!wizard("\n", input))
+                    {
+                        printf("%d\n", result);
+                        break;
+                    }
+                    wizard(" ", input);
+                }
+                end:;
+            }
+            else
+            {
+                printf("Invalid input!\n");
+            }
+        }
+        else if(!wizard("--l --str ", input))
+        {
+            extractString();
+            char searchingSTR[1024];
+            strcpy(searchingSTR, text);
+            if(!wizard(" --file ", input))
+            {
+                extractString();
+                char currentFile[1024];
+                strcpy(currentFile, text);
+                if(wizard("\n", input))
+                {
+                    printf("Invalid input!\n");
+                    return;
+                }
+                for (int i = 0; ; ++i) {
+                    if(findAt(i + 1, searchingSTR, text) == -1)
+                    {
+                        if(i != 0)
+                        {
+                            printf("%s\n", currentFile);
+                        }
+                        break;
+                    }
+                }
+            }
+            else if(!wizard(" --files ", input))
+            {
+                int result = 0;
+                while (1) {
+                    extractString();
+                    char currentFile[1024];
+                    strcpy(currentFile, text);
+                    for (int i = 0;; ++i) {
+                        int a;
+                        if ((a = findAt(i + 1, searchingSTR, text)) == -1) {
+                            if(i != 0) {
+                                printf("%s\n", currentFile);
+                            }
+                            break;
+                        } else if (a <= -2)
+                        {
+                            errorHandler(a, 0);
+                            printf("%s", printingResult);
+                        }
+                    }
+                    if(!wizard("\n", input))
+                        break;
+                    wizard(" ", input);
+                }
+            }
+            else
+            {
+                strcat(printingResult, "Invalid input!\n");
+            }
+        }
+        else if(!wizard("--str ", input))
+        {
+            extractString();
+            char searchingSTR[1024];
+            strcpy(searchingSTR, text);
+            if(!wizard(" --file ", input))
+            {
+                extractString();
+                if(wizard("\n", input))
+                {
+                    printf("Invalid input!\n");
+                    return;
+                }
+                for (int i = 0; ; ++i) {
+                    int a;
+                    if((a = findAt(i + 1, searchingSTR, text)) >= 0)
+                    {
+
+                        positionFinder(a, text);
+                        catLine(text, calculatedLine);
+                        break;
+                    }
+                }
+                printf("%s", printingResult);
+            }
+            else if(!wizard(" --files ", input))
+            {
+                int result = 0;
+                while (1) {
+                    extractString();
+                    char currentFile[1024];
+                    strcpy(currentFile, text);
+                    for (int i = 0;; ++i) {
+                        int a;
+                        if ((a = findAt(i + 1, searchingSTR, text)) >= 0) {
+                            char temp[1024];
+                            sprintf(temp, "%s: ", currentFile);
+                            strcat(printingResult, temp);
+                            positionFinder(a, text);
+                            catLine(text, calculatedLine);
+                        }
+                        else
+                            break;
+                    }
+                    if(!wizard("\n", input))
+                    {
+                        break;
+                    }
+
+                    wizard(" ", input);
+                }
+                printf("%s", printingResult);
+            }
+            else
+            {
+                printf("Invalid input!\n");
+            }
+        }
+        else
+            printf("Invalid input!\n");
+    }
+
+    else
+        printf("Invalid input!\n");
+}
+
+
 int main()
 {
     if(1)
@@ -1662,69 +2116,66 @@ int main()
     }
     while (1)
     {
+        restart:
+        printingResult[0] = '\0';
         fgets(input, 1024, stdin);
 
         if(!wizard("createfile ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                int a = createFile(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-            int a = createFile(text);
-            if(a == -1)
-                printf("Invalid path!\n");
-            else if(a == -2)
-                printf("Can't use the following characters: \", \', <, >, \?, *, :, |, \\");
-            else if(a == -3)
-                printf("There already exists a file with the given name!\n");
+            else if(!wizard(" =D ", input))
+            {
+                int a = createFile(text);
+                errorHandler(a, 1);
+                Arman();
+            }
             else
-                printf("Success!\n");
-
+            {
+                goto invalid;
+            }
         }
 
+        
         else if(!wizard("insertstr ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             char path[1024];
             strcpy(path, text);
             if(wizard(" --str ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(wizard(" --pos ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(barber(text))
             {
-                printf("Invalid escape sequence!\n");
+                strcat(printingResult, "Invalid escape sequence!\n");
                 continue;
             }
             char inputSTR[1024];
@@ -1732,238 +2183,307 @@ int main()
             int lineNum = numExtract();
             if(wizard(":", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int startPosition = numExtract();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                history(path);
+                int a;
+                if((a = insertStr(path, inputSTR, lineNum, startPosition)) == 0)
+                    submitHistory(path);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-            history(path);
-            insertStr(path, inputSTR, lineNum, startPosition);
-
+            else if(!wizard(" =D ", input))
+            {
+                history(path);
+                int a;
+                if((a = insertStr(path, inputSTR, lineNum, startPosition)) == 0)
+                    submitHistory(path);
+                errorHandler(a, 1);
+                Arman();
+            }
+            else
+                goto invalid;
         }
 
+        
         else if(!wizard("cat ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                int a = cat(text);
+                errorHandler(a, 0);
+                printf("%s", printingResult);
             }
-            cat(text);
+            else if(!wizard(" =D ", input))
+            {
+                int a = cat(text);
+                errorHandler(a, 0);
+                Arman();
+            }
+            else
+                goto invalid;
         }
 
+        
         else if(!wizard("removestr ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(wizard(" --pos ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int line = numExtract();
             if(wizard(":", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int index = numExtract();
             if(wizard(" --size ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int length = numExtract();
             if(!wizard(" --b\n", input))
             {
                 history(text);
                 int res = removeBackward(text, line, index, length);
-                if(!res)
-                    printf("Success!\n");
-                else if(res == 1)
-                    printf("Invalid file or directory!\n");
-                else if(res == 2)
-                    printf("Out of bounds!\n");
+                if(res == 0)
+                    submitHistory(text);
+                errorHandler(res, 1);
+                printf("%s", printingResult);
             }
             else if(!wizard(" --f\n", input))
             {
                 history(text);
                 int res = removeForward(text, line, index, length);
                 if(!res)
-                    printf("Success!\n");
-                else if(res == 1)
-                    printf("Invalid file or directory!\n");
-                else if(res == 2)
-                    printf("Out of bounds!\n");
+                    submitHistory(text);
+                errorHandler(res, 1);
+                printf("%s", printingResult);
+            }
+            else if(!wizard(" --b =D ", input))
+            {
+                history(text);
+                int res = removeBackward(text, line, index, length);
+                if(res == 0)
+                    submitHistory(text);
+                errorHandler(res, 1);
+                Arman();
+            }
+            else if(!wizard(" --f =D ", input))
+            {
+                history(text);
+                int res = removeForward(text, line, index, length);
+                if(!res)
+                    submitHistory(text);
+                errorHandler(res, 1);
+                Arman();
             }
             else
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
         }
 
+        
         else if(!wizard("copystr ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(wizard(" --pos ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int line = numExtract();
             if(wizard(":", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int index = numExtract();
             if(wizard(" --size ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int length = numExtract();
             if(!wizard(" --b\n", input))
             {
-                copyBackward(text, line, index, length);
-                printf("<%s>", clipBoard);
+                int a = copyBackward(text, line, index, length);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
             else if(!wizard(" --f\n", input))
             {
-                copyForward(text, line, index, length);
+                int a = copyForward(text, line, index, length);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
+            }
+            else if(!wizard(" --b =D ", input))
+            {
+                int a = copyBackward(text, line, index, length);
+                errorHandler(a, 1);
+                Arman();
+            }
+            else if(!wizard(" --f =D ", input))
+            {
+                int a = copyForward(text, line, index, length);
+                errorHandler(a, 1);
+                Arman();
             }
             else
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
         }
 
+        
         else if(!wizard("cutstr ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(wizard(" --pos ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int line = numExtract();
             if(wizard(":", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int index = numExtract();
             if(wizard(" --size ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int length = numExtract();
             if(!wizard(" --b\n", input))
             {
                 history(text);
                 copyBackward(text, line, index, length);
-                removeBackward(text, line, index, length);
+                int a;
+                if((a = removeBackward(text, line, index, length)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
             else if(!wizard(" --f\n", input))
             {
                 history(text);
                 copyForward(text, line, index, length);
-                removeForward(text, line, index, length);
+                int a;
+                if((a = removeForward(text, line, index, length)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
+            }
+            else if(!wizard(" --b =D ", input))
+            {
+                history(text);
+                copyBackward(text, line, index, length);
+                int a;
+                if((a = removeBackward(text, line, index, length)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                Arman();
+            }
+            else if(!wizard(" --f =D ", input))
+            {
+                history(text);
+                copyForward(text, line, index, length);
+                int a;
+                if((a = removeForward(text, line, index, length)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                Arman();
             }
             else
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
         }
 
+        
         else if(!wizard("pastestr ", input))
         {
             if(wizard("--file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(wizard(" --pos ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int line = numExtract();
             if(wizard(":", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             int index = numExtract();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                history(text);
+                int a;
+                if((a = insertStr(text, clipBoard, line, index)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-            history(text);
-            insertStr(text, clipBoard, line, index);
+            else if(!wizard(" =D ", input))
+            {
+                history(text);
+                int a;
+                if((a = insertStr(text, clipBoard, line, index)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                Arman();
+            }
+            else
+                goto invalid;
         }
 
+        
         else if(!wizard("find ", input))
         {
             if(wizard("--str ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             char findingStr[1024];
@@ -1971,106 +2491,291 @@ int main()
 
             if(wizard(" --file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             if(!wizard("\n", input))
             {
-                printf("%d\n", findAt(1, findingStr, text));
+                int a = findAt(1, findingStr, text);
+                if(a >= -1)
+                {
+                    char temp[1024];
+                    sprintf(temp, "%d\n", a);
+                    strcat(printingResult, temp);
+                }
+                errorHandler(a, 0);
+                printf("%s", printingResult);
                 continue;
             }
+
+            else if(!wizard(" =D ", input))
+            {
+                int a = findAt(1, findingStr, text);
+                if(a >= -1)
+                {
+                    char temp[1024];
+                    sprintf(temp, "%d\n", a);
+                    strcat(printingResult, temp);
+                }
+                errorHandler(a, 0);
+                Arman();
+                continue;
+            }
+
             else if(!wizard(" --count\n", input))
             {
                 for (int i = 0; ; ++i) {
-                    if(findAt(i + 1, findingStr, text) == -1)
+                    int a = findAt(i + 1, findingStr, text);
+                    if(a == -1)
                     {
-                        printf("%d\n", i);
+                        char temp[1024];
+                        sprintf(temp, "%d\n", i);
+                        strcat(printingResult, temp);
+                        break;
+                    }
+                    if(a < -1)
+                    {
+                        errorHandler(a, 0);
                         break;
                     }
                 }
+                printf("%s", printingResult);
                 continue;
             }
+
+            else if(!wizard(" --count =D ", input))
+            {
+                for (int i = 0; ; ++i) {
+                    int a = findAt(i + 1, findingStr, text);
+                    if(a == -1)
+                    {
+                        char temp[1024];
+                        sprintf(temp, "%d\n", i);
+                        strcat(printingResult, temp);
+                        break;
+                    }
+                    if(a < -1)
+                    {
+                        errorHandler(a, 0);
+                        break;
+                    }
+                }
+                Arman();
+                continue;
+            }
+
             else if(!wizard(" --at ", input))
             {
                 int index = numExtract();
-                if(wizard("\n", input))
+                if(!wizard("\n", input))
                 {
-                    printf("Invalid input!\n");
-                    continue;
+                    int a;
+                    a = findAt(index, findingStr, text);
+                    if(a >= -1)
+                    {
+                        char temp[1024];
+                        sprintf(temp, "%d\n", a);
+                        strcat(printingResult, temp);
+                    }
+                    errorHandler(a, 0);
+                    printf("%s", printingResult);
                 }
-                printf("%d\n", findAt(index, findingStr, text));
-                printf("next substring: <%s>\n", nextSubstring);
+                else if(!wizard(" =D ", input))
+                {
+                    int a;
+                    a = findAt(index, findingStr, text);
+                    if(a >= -1)
+                    {
+                        char temp[1024];
+                        sprintf(temp, "%d\n", a);
+                        strcat(printingResult, temp);
+                    }
+                    errorHandler(a, 0);
+                    Arman();
+                }
+                else
+                    goto invalid;
             }
+
             else if(!wizard(" --byword\n", input))
             {
-                printf("%d\n", findAtByWord(1, findingStr, text));
+                int a;
+                a = findAtByWord(1, findingStr, text);
+                errorHandler(a, 0);
+                if(a >= -1)
+                {
+                    char temp[1024];
+                    sprintf(temp, "%d\n", a);
+                    strcat(printingResult, temp);
+                }
+                printf("%s", printingResult);
             }
+
+            else if(!wizard(" --byword =D ", input))
+            {
+                int a;
+                a = findAtByWord(1, findingStr, text);
+                errorHandler(a, 0);
+                if(a >= -1)
+                {
+                    char temp[1024];
+                    sprintf(temp, "%d\n", a);
+                    strcat(printingResult, temp);
+                }
+                Arman();
+            }
+
             else if(!wizard(" --byword --at ", input))
             {
                 int index = numExtract();
-                if(wizard("\n", input))
+                if(!wizard("\n", input))
                 {
-                    printf("Invalid input!\n");
-                    continue;
+                    int a = findAtByWord(index, findingStr, text);
+                    errorHandler(a, 0);
+                    if(a >= -1)
+                    {
+                        char temp[1024];
+                        sprintf(temp, "%d\n", a);
+                        strcat(printingResult, temp);
+                    }
+                    printf("%s", printingResult);
                 }
-                printf("%d\n", findAtByWord(index, findingStr, text));
+                else if(!wizard(" =D ", input))
+                {
+                    int a = findAtByWord(index, findingStr, text);
+                    errorHandler(a, 0);
+                    if(a >= -1)
+                    {
+                        char temp[1024];
+                        sprintf(temp, "%d\n", a);
+                        strcat(printingResult, temp);
+                    }
+                    Arman();
+                }
+                else
+                    goto invalid;
             }
+
             else if(!wizard(" --all --byword\n", input))
             {
+                int newlineFlag;
                 for (int i = 1; ; ++i)
                 {
-                    int res;
-                    if(-1 != (res = findAtByWord(i, findingStr, text)))
+                    int res = findAtByWord(i, findingStr, text);
+                    errorHandler(res, 0);
+                    newlineFlag = res >= -1;
+                    if(-1 < res)
                     {
                         if(i != 1)
-                            printf(", ");
-                        printf("%d", res);
+                            strcat(printingResult, ", ");
+                        char temp[1024];
+                        sprintf(temp, "%d\n", res);
+                        strcat(printingResult, temp);
+                        res = findAtByWord(i, findingStr, text);
                     }
                     else
                         break;
                 }
-                printf("\n");
+                if(newlineFlag)
+                    strcat(printingResult, "\n");
+                printf("%s", printingResult);
             }
+
+            else if(!wizard(" --all --byword =D ", input))
+            {
+                int newlineFlag;
+                for (int i = 1; ; ++i)
+                {
+                    int res = findAtByWord(i, findingStr, text);
+                    errorHandler(res, 0);
+                    newlineFlag = res >= -1;
+                    if(-1 < res)
+                    {
+                        if(i != 1)
+                            strcat(printingResult, ", ");
+                        char temp[1024];
+                        sprintf(temp, "%d\n", res);
+                        strcat(printingResult, temp);
+                        res = findAtByWord(i, findingStr, text);
+                    }
+                    else
+                        break;
+                }
+                if(newlineFlag)
+                    strcat(printingResult, "\n");
+                Arman();
+            }
+
             else if(!wizard(" --all\n", input))
             {
+                int newlineFlag;
                 for (int i = 1; ; ++i)
                 {
-                    int res;
-                    if(-1 != (res = findAt(i, findingStr, text)))
+                    int res = findAt(i, findingStr, text);
+                    errorHandler(res, 0);
+                    newlineFlag = res >= -1;
+                    if(-1 < res)
                     {
                         if(i != 1)
-                            printf(", ");
-                        printf("%d", res);
+                            strcat(printingResult, ", ");
+                        char temp[1024];
+                        sprintf(temp, "%d\n", res);
+                        strcat(printingResult, temp);
+                        res = findAt(i, findingStr, text);
                     }
                     else
                         break;
                 }
-                printf("\n");
+                if(newlineFlag)
+                    strcat(printingResult, "\n");
+                printf("%s", printingResult);
+            }
+
+            else if(!wizard(" --all =D ", input))
+            {
+                int newlineFlag;
+                for (int i = 1; ; ++i)
+                {
+                    int res = findAt(i, findingStr, text);
+                    errorHandler(res, 0);
+                    newlineFlag = res >= -1;
+                    if(-1 < res)
+                    {
+                        if(i != 1)
+                            strcat(printingResult, ", ");
+                        char temp[1024];
+                        sprintf(temp, "%d\n", res);
+                        strcat(printingResult, temp);
+                        res = findAt(i, findingStr, text);
+                    }
+                    else
+                        break;
+                }
+                if(newlineFlag)
+                    strcat(printingResult, "\n");
+                Arman();
             }
             else
-                printf("Invalid input!\n");
+                goto invalid;
         }
-
+        
+        
         else if(!wizard("replace ", input))
         {
 
             if(wizard("--str1 ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             char replacing[1024];
@@ -2078,14 +2783,12 @@ int main()
 
             if(wizard(" --str2 ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             char replacement[1024];
@@ -2094,36 +2797,140 @@ int main()
 
             if(wizard(" --file ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
 
             if(extractString())
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
-
             if(!wizard("\n", input))
             {
                 history(text);
-                replace(replacing, replacement, 1, text);
+                int a;
+                if((a = replace(replacing, replacement, 1, text)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-
-
+            else if(!wizard(" =D ", input))
+            {
+                history(text);
+                int a;
+                if((a = replace(replacing, replacement, 1, text)) >= -1)
+                    submitHistory(text);
+                if(a == -1)
+                    a = 0;
+                errorHandler(a, 1);
+                Arman();
+            }
+            else if(!wizard(" --at ", input))
+            {
+                int index = numExtract();
+                if(!wizard("\n", input))
+                {
+                    history(text);
+                    int a;
+                    if((a = replace(replacing, replacement, index, text)) == 0)
+                        submitHistory(text);
+                    errorHandler(a, 1);
+                    printf("%s", printingResult);
+                }
+                else if(!wizard(" =D ", input))
+                {
+                    history(text);
+                    int a;
+                    if((a = replace(replacing, replacement, index, text)) == 0)
+                        submitHistory(text);
+                    errorHandler(a, 1);
+                    Arman();
+                }
+                else
+                {
+                    goto invalid;
+                }
+            }
+            else if(!wizard(" --all", input))
+            {
+                
+                if(!wizard("\n", input)) {
+                    history(text);
+                    int count = 0;
+                    for (;; ++count) {
+                        int a = findAt(count + 1, replacing, text);
+                        if (a == -1) {
+                            break;
+                        }
+                        if (a < -1) {
+                            errorHandler(a, 1);
+                            printf("%s", printingResult);
+                            goto restart;
+                        }
+                    }
+                    int range = findAt(count, replacing, text) + 1;
+                    for (count; count > 0; count--) {
+                        int a = findAt(count, replacing, text);
+                        if (a >= range || a == -1)
+                            continue;
+                        replace(replacing, replacement, count, text);
+                    }
+                    submitHistory(text);
+                    printf("Success!\n");
+                }
+                
+                else if(!wizard(" =D ", input)) {
+                    history(text);
+                    int count = 0;
+                    for (;; ++count) {
+                        int a = findAt(count + 1, replacing, text);
+                        if (a == -1) {
+                            break;
+                        }
+                        if (a < -1) {
+                            errorHandler(a, 1);
+                            Arman();
+                            goto restart;
+                        }
+                    }
+                    int range = findAt(count, replacing, text) + 1;
+                    for (count; count > 0; count--) {
+                        int a = findAt(count, replacing, text);
+                        if (a >= range || a == -1)
+                            continue;
+                        replace(replacing, replacement, count, text);
+                    }
+                    submitHistory(text);
+                    errorHandler(0, 1);
+                    Arman();
+                }
+            
+                else
+                    goto invalid;
+            }
+            else
+                goto invalid;
         }
+
 
         else if(!wizard("tree ", input))
         {
             int depth = numExtract();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                strcat(printingResult, "root\n");
+                tree(1, 0, depth);
+                printf("%s", printingResult);
             }
-            printf("root\n");
-            tree(1, 0, depth);
+            else if(!wizard(" =D ", input))
+            {
+                strcat(printingResult, "root\n");
+                tree(1, 0, depth);
+                Arman();
+            }
+            else
+                goto invalid;
         }
+
 
         else if(!wizard("grep ", input))
         {
@@ -2135,18 +2942,34 @@ int main()
                 if(!wizard(" --file ", input))
                 {
                     extractString();
-                    if(wizard("\n", input))
+                    if(!wizard("\n", input))
                     {
-                        printf("Invalid input!\n");
-                        continue;
-                    }
-                    for (int i = 0; ; ++i) {
-                        if(findAt(i + 1, searchingSTR, text) == -1)
-                        {
-                            printf("%d\n", i);
-                            break;
+                        for (int i = 0; ; ++i) {
+                            if(findAt(i + 1, searchingSTR, text) == -1)
+                            {
+                                char temp[1024];
+                                sprintf(temp, "%d\n", i);
+                                strcat(printingResult, temp);
+                                break;
+                            }
                         }
+                        printf("%s", printingResult);
                     }
+                    else if(!wizard(" =D ", input))
+                    {
+                        for (int i = 0; ; ++i) {
+                            if(findAt(i + 1, searchingSTR, text) == -1)
+                            {
+                                char temp[1024];
+                                sprintf(temp, "%d\n", i);
+                                strcat(printingResult, temp);
+                                break;
+                            }
+                        }
+                        Arman();
+                    }
+                    else
+                        goto invalid;
                 }
                 else if(!wizard(" --files ", input))
                 {
@@ -2158,12 +2981,23 @@ int main()
                             if ((a = findAt(i + 1, searchingSTR, text)) == -1) {
                                 result += i;
                                 break;
-                            } else if (a == -2)
+                            } else if (a <= -2)
                                 goto end;
                         }
                         if(!wizard("\n", input))
                         {
-                            printf("%d\n", result);
+                            char temp[1024];
+                            sprintf(temp, "%d\n", result);
+                            strcat(printingResult, temp);
+                            printf("%s", printingResult);
+                            break;
+                        }
+                        else if(!wizard(" =D ", input))
+                        {
+                            char temp[1024];
+                            sprintf(temp, "%d\n", result);
+                            strcat(printingResult, temp);
+                            Arman();
                             break;
                         }
                         wizard(" ", input);
@@ -2172,7 +3006,7 @@ int main()
                 }
                 else
                 {
-                    printf("Invalid input!\n");
+                    goto invalid;
                 }
             }
             else if(!wizard("--l --str ", input))
@@ -2185,19 +3019,44 @@ int main()
                     extractString();
                     char currentFile[1024];
                     strcpy(currentFile, text);
-                    if(wizard("\n", input))
+                    if(!wizard("\n", input))
                     {
-                        printf("Invalid input!\n");
-                        continue;
-                    }
-                    for (int i = 0; ; ++i) {
-                        if(findAt(i + 1, searchingSTR, text) == -1)
-                        {
-                            if(i != 0)
-                                printf("%s\n", currentFile);
-                            break;
+                        for (int i = 0; ; ++i) {
+                            int a;
+                            if((a = findAt(i + 1, searchingSTR, text)) <= -1)
+                            {
+                                if(i != 0)
+                                {
+                                    char temp[1024];
+                                    sprintf(temp, "%s\n", currentFile);
+                                    strcat(printingResult, temp);
+                                }
+                                errorHandler(a, 0);
+                                printf("%s", printingResult);
+                                break;
+                            }
                         }
                     }
+                    else if(!wizard(" =D ", input))
+                    {
+                        for (int i = 0; ; ++i) {
+                            int a;
+                            if((a = findAt(i + 1, searchingSTR, text)) <= -1)
+                            {
+                                if(i != 0)
+                                {
+                                    char temp[1024];
+                                    sprintf(temp, "%s\n", currentFile);
+                                    strcat(printingResult, temp);
+                                }
+                                errorHandler(a, 0);
+                                Arman();
+                                break;
+                            }
+                        }
+                    }
+                    else
+                        goto invalid;
                 }
                 else if(!wizard(" --files ", input))
                 {
@@ -2209,21 +3068,30 @@ int main()
                         for (int i = 0;; ++i) {
                             int a;
                             if ((a = findAt(i + 1, searchingSTR, text)) == -1) {
-                                if(i != 0)
-                                    printf("%s\n", currentFile);
+                                if(i != 0) {
+                                    char temp[1024];
+                                    sprintf(temp, "%s\n", currentFile);
+                                    strcat(printingResult, temp);
+                                }
                                 break;
-                            } else if (a == -2)
+                            } else if (a <= -2)
                                 goto end1;
                         }
-                        if(!wizard("\n", input))
+                        if(!wizard("\n", input)) {
+                            printf("%s", printingResult);
                             break;
+                        }
+                        else if(!wizard(" =D ", input)) {
+                            Arman();
+                            break;
+                        }
                         wizard(" ", input);
                     }
                     end1:;
                 }
                 else
                 {
-                    printf("Invalid input!\n");
+                    goto invalid;
                 }
             }
             else if(!wizard("--str ", input))
@@ -2234,21 +3102,37 @@ int main()
                 if(!wizard(" --file ", input))
                 {
                     extractString();
-                    if(wizard("\n", input))
+                    if(!wizard("\n", input))
                     {
-                        printf("Invalid input!\n");
-                        continue;
-                    }
-                    for (int i = 0; ; ++i) {
-                        int a;
-                        if((a = findAt(i + 1, searchingSTR, text)) >= 0)
-                        {
+                        for (int i = 0; ; ++i) {
+                            int a;
+                            if((a = findAt(i + 1, searchingSTR, text)) >= 0)
+                            {
 
-                            positionFinder(a, text);
-                            catLine(text, calculatedLine);
-                            break;
+                                positionFinder(a, text);
+                                catLine(text, calculatedLine);
+                            }
+                            else
+                                break;
                         }
+                        printf("%s", printingResult);
                     }
+                    else if(!wizard(" =D ", input))
+                    {
+                        for (int i = 0; ; ++i) {
+                            int a;
+                            if((a = findAt(i + 1, searchingSTR, text)) >= 0)
+                            {
+
+                                positionFinder(a, text);
+                                catLine(text, calculatedLine);
+                                break;
+                            }
+                        }
+                        Arman();
+                    }
+                    else
+                        goto invalid;
                 }
                 else if(!wizard(" --files ", input))
                 {
@@ -2259,8 +3143,10 @@ int main()
                         strcpy(currentFile, text);
                         for (int i = 0;; ++i) {
                             int a;
-                            if ((a = findAt(i + 1, searchingSTR, text)) != -1 && a != -2) {
-                                printf("%s: ", currentFile);
+                            if ((a = findAt(i + 1, searchingSTR, text)) >= 0) {
+                                char temp[1024];
+                                sprintf(temp, "%s: ", currentFile);
+                                strcat(printingResult, temp);
                                 positionFinder(a, text);
                                 catLine(text, calculatedLine);
                             } 
@@ -2269,6 +3155,12 @@ int main()
                         }
                         if(!wizard("\n", input))
                         {
+                            printf("%s", printingResult);
+                            break;
+                        }
+                        else if(!wizard(" =D ", input))
+                        {
+                            Arman();
                             break;
                         }
 
@@ -2278,41 +3170,57 @@ int main()
                 }
                 else
                 {
-                    printf("Invalid input!\n");
+                    goto invalid;
                 }
             }
         }
 
+
         else if(!wizard("auto-indent ", input))
         {
             extractString();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                history(text);
+                int a;
+                if((a = autoIndent(text)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-            history(text);
-            autoIndent(text);
+            else if(!wizard(" =D ", input))
+            {
+                history(text);
+                int a;
+                if((a = autoIndent(text)) == 0)
+                    submitHistory(text);
+                errorHandler(a, 1);
+                Arman();
+            }
+            else
+                goto invalid;
         }
+
 
         else if(!wizard("undo ", input))
         {
             extractString();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                int a = undo(text);
+                errorHandler(a, 1);
+                printf("%s", printingResult);
             }
-            int a = undo(text);
-            if(a == -1)
-                printf("Invalid path!\n");
-            else if(a == -2)
-                printf("The file you are looking for does not exist!\n");
-            else if(a == -3)
-                printf("There is no history for the file given!\n");
+            else if(!wizard(" =D ", input))
+            {
+                int a = undo(text);
+                errorHandler(a, 1);
+                Arman();
+            }
             else
-                printf("Success!\n");
+                goto invalid;
         }
+
 
         else if(!wizard("compare ", input))
         {
@@ -2321,21 +3229,42 @@ int main()
             strcpy(file1, text);
             if(wizard(" ", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                goto invalid;
             }
             extractString();
-            if(wizard("\n", input))
+            if(!wizard("\n", input))
             {
-                printf("Invalid input!\n");
-                continue;
+                int a = compare(file1, text);
+                errorHandler(a, 0);
+                printf("%s", printingResult);
             }
-            compare(file1, text);
+            if(!wizard(" =D ", input))
+            {
+                int a = compare(file1, text);
+                errorHandler(a, 0);
+                Arman();
+            }
+            else
+                goto invalid;
         }
+
 
         else
         {
-            printf("Invalid input!\n");
+            invalid:
+            strcat(printingResult, "Invalid input!\n");
+            while (1)
+            {
+                if (strlen(input) == 0) {
+                    printf("%s", printingResult);
+                    break;
+                }
+                if (!wizard("=D ", input)) {
+                    Arman();
+                    break;
+                } else
+                    countAndDelete(input);
+            }
         }
     }
 }
